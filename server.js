@@ -3,27 +3,30 @@ const bodyParser = require('body-parser');
 const pg = require('pg');
 const app = express();
 const exphbs  = require('express-handlebars');
+const Sequelize = require('sequelize');
 
 
 
-// Configure PostgreSQL connection
-const pool = new pg.Pool({
-    user: 'gyoqdant',
+// set up sequelize to point to our postgres database
+var sequelize = new Sequelize('gyoqdant', 'gyoqdant', '5kBLoHJj8ZHAq_3em31nCed3pgGO7jEd', {
     host: 'fanny.db.elephantsql.com',
-    database: 'gyoqdant',
-    password: '5kBLoHJj8ZHAq_3em31nCed3pgGO7jEd',
-    port: 5432
+    dialect: 'postgres',
+    port: 5432,
+    dialectOptions: {
+        ssl: { rejectUnauthorized: false }
+    },
+    query: { raw: true }
 });
 
-// Prepare the database
-pool.query(
-    `CREATE TABLE IF NOT EXISTS users (
-           id SERIAL             PRIMARY KEY,
-           name VARCHAR(255)     NOT NULL,
-           email VARCHAR(255)    NOT NULL UNIQUE,
-           created_at TIMESTAMP  DEFAULT CURRENT_TIMESTAMP
-        );`
-    );
+var Project = sequelize.define('Userss', {
+    id:{
+        type: Sequelize.INTEGER,
+        primaryKey: true,
+        autoIncrement: true
+    },
+    name: Sequelize.STRING,
+    email: Sequelize.STRING,
+});
 
 // Load styles from public folder
 app.use(express.static("./public/"));
@@ -50,17 +53,18 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.get('/update-user', (req, res) => {
 
     const id = req.query.id;
-    pool.query(`SELECT * FROM users WHERE id = ${id}`, (error, results) => {
-        // Handle any errors that occur
-        if (error) {
-            console.error(error);
-            res.status(500).send('Internal server error');
-            return;
-        }
-        // Render the 'index' template with the list of users as a context object
-        res.render('edit', { users: results.rows[0], layout:false });
+
+    sequelize.sync().then(function () {
+        Project.findAll({
+            where: {
+                id: id
+            }
+        }).then(function(data){
+            res.render('edit', { users: data[0], layout:false });
+        });
+   
     });
-    
+   
 });
 
 // Update user data in database
@@ -83,16 +87,17 @@ app.post('/update-user', (req, res) => {
     const name = req.body.name;
     const id = req.body.id;
     const email = req.body.email;
-    // Update data into PostgreSQL
-    pool.query(
-        'UPDATE users SET name = $1, email = $2 WHERE id = $3',
-        [name, email,id],
-        (error, results) => {
-            if (error) {
-                console.log(error); res.status(500).json({ message: 'Error update data into PostgreSQL' });
-            } else {
+
+        sequelize.sync().then(function () {
+            Project.update({
+                name: name,
+                email: email
+            }, {
+                where: { id: id }
+            }).then(function () {
                 res.redirect("/");
-            }
+            });
+       
         });
 
   });
@@ -114,20 +119,18 @@ app.get('/delete-user', (req, res) => {
     Redirect to root of the website.
     ----------------------------------------*/
 
-    
+   
     const id = req.query.id;
+    sequelize.sync().then(function () {
 
-    // Update data into PostgreSQL
-    pool.query(
-        'DELETE FROM users WHERE id = $1',
-        [id],
-        (error, results) => {
-            if (error) {
-                console.log(error); res.status(500).json({ message: 'Error Delete data from PostgreSQL' });
-            } else {
-                res.redirect("/");
-            }
+        // remove User 3 from the database
+        Project.destroy({
+            where: { id: id } // only remove user with id == 3
+        }).then(function () {
+            res.redirect("/");
         });
+   
+    });
 
 
   });
@@ -135,30 +138,27 @@ app.get('/delete-user', (req, res) => {
 // Handle form submission
 app.post('/insert-user', (req, res) => {
     const { name, email } = req.body;
-    // Insert data into PostgreSQL
-    pool.query(
-        'INSERT INTO users (name, email) VALUES ($1, $2)',
-        [name, email],
-        (error, results) => {
-            if (error) {
-                console.log(error); res.status(500).json({ message: 'Error inserting data into PostgreSQL' });
-            } else {
+        sequelize.sync().then(function () {
+
+            // create a new "Project" and add it to the database
+            Project.create({
+                name: name,
+                email: email
+            }).then(function (project) {
                 res.redirect("/");
-            }
+            }).catch(function (error) {
+                console.log("something went wrong!");
+            });
         });
 });
 
 
 app.get('/', (req, res) => {
-    pool.query('SELECT * FROM users ORDER BY id ASC', (error, results) => {
-        // Handle any errors that occur
-        if (error) {
-            console.error(error);
-            res.status(500).send('Internal server error');
-            return;
-        }
-        // Render the 'index' template with the list of users as a context object
-        res.render('index', { users: results.rows, layout:false });
+    sequelize.sync().then(function () {
+        // return all first names only
+        Project.findAll({ }).then(function(data){        
+            res.render('index', { users: data, layout:false });
+        });
     });
 });
 
@@ -167,3 +167,4 @@ app.get('/', (req, res) => {
 app.listen(5000, () => {
     console.log('Server started on http://localhost:5000');
 });
+    
