@@ -16,28 +16,14 @@ const pool = new pg.Pool({
 });
 
 // Prepare the database
-/*pool.query(
+pool.query(
     `CREATE TABLE IF NOT EXISTS users (
            id SERIAL             PRIMARY KEY,
            name VARCHAR(255)     NOT NULL,
            email VARCHAR(255)    NOT NULL UNIQUE,
            created_at TIMESTAMP  DEFAULT CURRENT_TIMESTAMP
         );`
-    );*/
-    let usersTable = sequelize.define('users', {
-        id: {
-            type: Sequelize.INTEGER,
-            primaryKey: true,
-            autoIntcrement: true
-
-        },
-        namer: Sequelize.STRING,
-        email: Sequelize.STRING,
-        created_at: Sequelize.DATE},{
-            createdAt: false,
-            updatedAt: false,
-            createdAt: false
-        });;
+    );
 
 // Load styles from public folder
 app.use(express.static("./public/"));
