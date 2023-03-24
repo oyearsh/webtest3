@@ -8,22 +8,36 @@ const exphbs  = require('express-handlebars');
 
 // Configure PostgreSQL connection
 const pool = new pg.Pool({
-    user: 'krhypwqm',
-    host: 'suleiman.db.elephantsql.com',
-    database: 'krhypwqm',
-    password: '0s9wUh-JU1SkxoXswFTv_zGYlicaX2Pp',
+    user: 'gyoqdant',
+    host: 'fanny.db.elephantsql.com',
+    database: 'gyoqdant',
+    password: '5kBLoHJj8ZHAq_3em31nCed3pgGO7jEd',
     port: 5432
 });
 
 // Prepare the database
-pool.query(
+/*pool.query(
     `CREATE TABLE IF NOT EXISTS users (
            id SERIAL             PRIMARY KEY,
            name VARCHAR(255)     NOT NULL,
            email VARCHAR(255)    NOT NULL UNIQUE,
            created_at TIMESTAMP  DEFAULT CURRENT_TIMESTAMP
         );`
-    );
+    );*/
+    let usersTable = sequelize.define('users', {
+        id: {
+            type: Sequelize.INTEGER,
+            primaryKey: true,
+            autoIntcrement: true
+
+        },
+        namer: Sequelize.STRING,
+        email: Sequelize.STRING,
+        created_at: Sequelize.DATE},{
+            createdAt: false,
+            updatedAt: false,
+            createdAt: false
+        });;
 
 // Load styles from public folder
 app.use(express.static("./public/"));
@@ -65,39 +79,70 @@ app.get('/update-user', (req, res) => {
 
 // Update user data in database
 app.post('/update-user', (req, res) => {
-    const id = req.body.id;
-    const name = req.body.name;
-    const email = req.body.email;
-  
-    // Update user data in database
-    const result = pool.query(
-    'UPDATE users SET name = $1, email = $2 WHERE id = $3',
-    [name, email,id],
+    /*---------------------------------------
+    [TODO] Please complete the implementation
+    to be able to update users in PostgreSQL.
+    Receving three parameters id, name and email
 
-    (error) => {
-        if (error) {
-            console.log(error); res.status(500).json({ message: 'Error Updating data into PostgreSQL' });
-        } else {
-            res.redirect("/");
-        }
-    });
+    Using the query:
+    "UPDATE users SET name = $1, email = $2 WHERE id = $3"
+
+    If Failed: Return status code 500 and JSON message:
+    {message: "Error Updating data into PostgreSQL"}
+
+    If succeed:
+    Redirect to root of the website.
+    ----------------------------------------*/
+
+    const name = req.body.name;
+    const id = req.body.id;
+    const email = req.body.email;
+    // Update data into PostgreSQL
+    pool.query(
+        'UPDATE users SET name = $1, email = $2 WHERE id = $3',
+        [name, email,id],
+        (error, results) => {
+            if (error) {
+                console.log(error); res.status(500).json({ message: 'Error update data into PostgreSQL' });
+            } else {
+                res.redirect("/");
+            }
+        });
 
   });
 
 // Delete user data in database
 app.get('/delete-user', (req, res) => {
+    /*---------------------------------------
+    [TODO] Please complete the implementation
+    to be able to delete users in PostgreSQL.
+    Receving on paramter id
+
+    Using the query:
+    "DELETE FROM users WHERE id = $1"
+
+    If Failed: Return status code 500 and JSON message:
+    {message: "Error Delete data from PostgreSQL"}
+
+    If succeed:
+    Redirect to root of the website.
+    ----------------------------------------*/
+
+    
     const id = req.query.id;
-    // Delete user data from database
-    const result = pool.query(
-    'DELETE FROM users WHERE id = $1',
-    [id],
-    (error) => {
-        if (error) {
-            console.log(error); res.status(500).json({ message: 'Error Delete data from PostgreSQL' });
-        } else {
-            res.redirect("/");
-        }
-    });
+
+    // Update data into PostgreSQL
+    pool.query(
+        'DELETE FROM users WHERE id = $1',
+        [id],
+        (error, results) => {
+            if (error) {
+                console.log(error); res.status(500).json({ message: 'Error Delete data from PostgreSQL' });
+            } else {
+                res.redirect("/");
+            }
+        });
+
 
   });
 
